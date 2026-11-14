@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#141c43">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Né Nhậu!">
+  <meta name="description" content="Siêu Nhân Né Nhậu - game Việt hài hước, selfie làm nhân vật, né quán nhậu, săn item thể thao và phá kỷ lục!">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+  <title>SIÊU NHÂN NÉ NHẬU · Không say, chỉ bay!</title>
+</head>
+<body>
+<div id="phone" class="phone">
+  <canvas id="stage" aria-label="Màn chơi Siêu Nhân Né Nhậu, chạm màn hình để bay lên"></canvas>
+  <div id="hud" class="hud hidden">
+    <button type="button" id="pauseBtn" class="pause-button" aria-label="Tạm dừng">Ⅱ</button>
+    <div class="score-box"><div class="mini-cap">ĐIỂM</div><div id="score" class="score-num">0</div><div class="gold-hud">🪙 <span id="currentGold">0</span> vàng</div></div>
+    <div class="right-hud"><div>🏆 <span id="best">0</span></div><div class="speed-label">TỐC ĐỘ <span id="speed">1.0×</span></div><div id="skillTag" class="skill-tag hidden"></div></div>
+    <div id="tip" class="tip">CHẠM ĐỂ BAY ↑</div>
+  </div>
+  <div id="menu" class="overlay menu-screen">
+    <div class="brand-mini">MINIGAME AI STUDIO · CARTOON EDITION 2.2 · GỌN NHẸ</div>
+    <div class="logo-wrap"><div class="beer-emoji">🍺</div><h1>SIÊU NHÂN<br><strong>NÉ NHẬU!</strong></h1><p>KHÔNG SAY • CHỈ BAY!</p></div>
+    <div class="showcase"><img src="assets/hero.png" alt="Siêu nhân đang bay" loading="eager"><span class="showcase-bubble">“Một cốc thôi” là bẫy!</span></div>
+    <div class="avatar-card">
+      <div class="avatar-preview" id="avatarPreview" aria-label="Ảnh đại diện siêu nhân">😎</div>
+      <div class="avatar-right"><span class="tiny-label">SIÊU NHÂN CỦA MÀY</span><label class="nick-label" for="nickname">Tên biệt danh</label><input id="nickname" maxlength="16" placeholder="Ví dụ: Chủ Tịch" autocomplete="off" spellcheck="false"><div class="avatar-choices"><button type="button" id="cameraBtn" class="small-btn">📸 CHỤP MẶT</button><button type="button" id="galleryBtn" class="small-btn alt">🖼 CHỌN ẢNH</button></div></div>
+    </div>
+    <input type="file" id="cameraInput" accept="image/*" capture="user" class="visually-hidden">
+    <input type="file" id="galleryInput" accept="image/*" class="visually-hidden">
+    <p class="privacy">🔒 Ảnh chỉ lưu trên máy của mày · Không gửi lên mạng</p>
+    <button type="button" id="startBtn" class="big-btn">▶ BAY NGAY!</button>
+    <div class="menu-actions"><button type="button" id="leaderBtn" class="outline-btn">🏆 KỶ LỤC TRÊN MÁY</button><button type="button" id="soundBtn" class="outline-btn">🔊 ÂM THANH</button></div>
+    <div class="rules"><span>⚽ Chậm 4 giây</span><span>🏸 Bất tử 3 giây</span><span>🏋️ Nhân đôi điểm</span><span>🥤 Khiên 1 lần</span><span>🧲 Hút xu</span></div>
+    <p class="tiny-foot">Né quán để ghi điểm, nhặt 🪙 vàng. Về nhà đủ vàng thì bà xã tha! <strong>Két vàng: <span id="bankGold">0</span></strong></p>
+  </div>
+  <div id="pausePanel" class="overlay center-panel hidden"><div class="dialog"><div class="dialog-emoji">⏸️</div><h2>TẠM NGHỈ UỐNG NƯỚC</h2><p>Đừng để anh em kéo đi nhậu!</p><button type="button" id="resumeBtn" class="big-btn">▶ BAY TIẾP</button><button type="button" id="pauseHomeBtn" class="outline-btn">⌂ VỀ MENU</button></div></div>
+  <div id="gameover" class="overlay gameover hidden">
+    <div class="result-head"><span>🏠 VỀ NHÀ TÍNH SỔ!</span><p>NÉ QUÁN, NHẶT VÀNG, XEM VỢ CÓ THA KHÔNG!</p></div>
+    <div class="wife-scene" id="wifeScene" aria-label="Cảnh vợ Sư Tử Hà Đông đang mắng siêu nhân">
+      <div class="wife-bubble" id="wifeQuote">ANH MANG ĐƯỢC BAO NHIÊU VÀNG VỀ?</div><div id="wifeMood" class="wife-mood hidden">😏</div><div class="wife-art">👩🏻‍🦱<span class="broom">🧹</span><small>🦁 SƯ TỬ HÀ ĐÔNG</small></div>
+      <div class="husband-art"><div class="husband-face" id="loseAvatar">😭</div><div class="husband-body">🦸🏻‍♂️</div><span>HU HU...</span></div>
+      <div class="house-floor"></div>
+    </div>
+    <div class="result-card"><div class="result-row"><div><span>ĐIỂM</span><strong id="finalScore">0</strong></div><div><span>KỶ LỤC</span><strong id="finalBest">0</strong></div><div><span>VÀNG MANG VỀ</span><strong id="finalCoins">0</strong></div></div><div id="recordMsg" class="record-msg">Cố thêm ván nữa nhé!</div></div>
+    <div id="homeVerdict" class="home-verdict" role="status">🪙 ĐANG TÍNH VÀNG...</div>
+    <button type="button" id="replayBtn" class="big-btn">↻ CHƠI LẠI</button>
+    <div class="menu-actions"><button type="button" id="shareBtn" class="outline-btn">↗ KHOE THÀNH TÍCH</button><button type="button" id="homeBtn" class="outline-btn">⌂ MENU</button></div>
+  </div>
+  <div id="leaderboard" class="overlay center-panel hidden"><div class="dialog"><h2>🏆 KỶ LỤC TRÊN MÁY</h2><p>Bảng này chỉ lưu trên thiết bị, chưa phải TOP online toàn quốc.</p><div id="rankList" class="rank-list"></div><button type="button" id="closeLeaderBtn" class="big-btn">ĐÓNG</button></div></div>
+  <div id="toast" class="toast hidden" role="status"></div>
+</div>
+<script src="game.js" defer></script>
+</body>
+</html>
