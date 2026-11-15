@@ -1,0 +1,22 @@
+BẢN VÁ LỖI SIÊU NHÂN NÉ NHẬU — 15/11/2026
+
+KẾT QUẢ
+- Hoạt ảnh tay dẫn trước khi bay (tay-vai-khuỷu-cổ tay cùng chuyển động).
+- Shop: từng món hàng có hình vẽ canvas chuyển động; nhân vật mặc thử chồng lớp quần áo, tóc, kính, mũ, trang sức và có pet bay theo.
+- Menu: nhân vật hoạt hình động thay ảnh tĩnh.
+- Màn thua: ảnh bà vợ hiển thị vừa khung (không bị cắt crop); nếu ảnh gốc không tải được tự động thử assets/wife.png, cuối cùng là minh hoạ dự phòng.
+- Không thay đổi SQL, logic tài khoản, số vàng, bảng TOP hay item ID.
+
+CÁCH ĐƯA LÊN GITHUB
+1. Vào https://github.com/Anhtuanvn8888/si-u-nh-n-n-nh-u
+2. Bấm Add file > Upload files, tải shop-upgrade.js lên thư mục gốc, bấm Commit changes.
+3. Vào file index.html tại thư mục gốc > bấm biểu tượng bút chì Edit.
+4. Tại cuối file, ngay TRƯỚC <script src="game-v3.js" defer></script>, chèn:
+   <script src="shop-upgrade.js?v=20261115" defer></script>
+5. Bấm Commit changes. HOẶC thay index.html bằng bản trong gói này (nhớ giữ các chỉnh sửa khác nếu đã cập nhật GitHub).
+6. Mở https://anhtuanvn8888.github.io/si-u-nh-n-n-nh-u/ bằng cửa sổ ẩn danh, hoặc tải lại Ctrl+Shift+R.
+7. Kiểm tra: SHOP > THỬ các món > nhấn MUA và MẶC > đóng shop > chơi kiểm tra nhân vật và pet; cho thua để kiểm tra ảnh bà vợ.
+
+LƯU Ý
+GitHub đã cho trợ lý đọc repo nhưng từ chối ghi (HTTP 403: Resource not accessible by integration), nên bộ vá này CHƯA được đẩy trực tiếp.
+Bộ cập nhật này là overlay không sửa game-v3.js và không thay đổi tài sản đã mua.
