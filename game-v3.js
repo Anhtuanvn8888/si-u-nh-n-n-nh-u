@@ -13,13 +13,37 @@ const GEAR=[
  ['glasses_none','glasses','Không kính',0,'🙂','Mặt mộc'],['glasses_black','glasses','Kính đen',125,'🕶️','Ngầu khỏi bàn'],['glasses_heart','glasses','Kính trái tim',180,'😍','Chất lãng tử'],['glasses_star','glasses','Kính ngôi sao',300,'🌟','Ngôi sao đường phố'],
  ['hat_none','hat','Đầu trần',0,'🙂','Đón gió'],['hat_cap','hat','Mũ lưỡi trai',140,'🧢','Mũ bụi bặm'],['hat_cowboy','hat','Mũ cao bồi',240,'🤠','Cao bồi miền Tây'],['hat_crown','hat','Vương miện',750,'👑','Vua né nhậu'],['hat_helmet','hat','Mũ chiến binh',680,'🪖','Chiến đấu hết mình'],
  ['jewel_none','jewelry','Không trang sức',0,'🙂','Đơn giản'],['jewel_chain','jewelry','Dây chuyền vàng',250,'📿','Sáng lấp lánh'],['jewel_medal','jewelry','Huy chương',490,'🥇','Huyền thoại thể thao'],['jewel_diamond','jewelry','Kim cương',1250,'💎','Rực cả bầu trời'],
+ ['hero_natra','character','Bé Na Tra Lửa Đỏ',690,'🔥','Thần đồng hỏa luân'],
+ ['hero_monkey','character','Hầu Vương Thiên Cung',950,'🐒','Hầu vương bay trên mây'],
+ ['hero_dragon_knight','character','Tiểu Long Tướng',1150,'🐲','Chiến binh long văn'],
+ ['hero_thunder_god','character','Chiến Thần Lôi Điện',1400,'⚡','Thần sấm mạnh mẽ'],
+ ['hero_block','character','Khối Vuông Phi Hành',620,'🧱','Siêu nhân khối vuông'],
+ ['hero_gold_boss','character','Đại Gia Vest Vàng',1700,'💰','Đại gia toàn vàng'],
+ ['hero_traffic','character','Siêu Nhân Giao Thông',980,'🚦','Cảnh sát giao thông bay'],
+ ['hero_mecha','character','Mecha Hộ Vệ',1800,'🤖','Robot giáp đỏ xanh'],
+ ['hero_titan','character','Titan Cánh Thép',2450,'🦾','Robot giáp cánh vàng'],
+ ['hero_robot_pilot','character','Phi Công Người Máy',2100,'🚀','Phi công phản lực'],
+ ['pet_panda','pet','Gấu trúc siêu nhân',560,'🐼','Gấu trúc bay cùng'],
+ ['pet_monkey','pet','Khỉ con phi hành',590,'🐵','Khỉ con siêu lầy'],
+ ['pet_tiger','pet','Hổ con siêu tốc',760,'🐯','Hổ nhỏ áo choàng'],
+ ['pet_shark','pet','Cá mập tên lửa',920,'🦈','Cá mập phản lực'],
+ ['pet_owl','pet','Cú mèo thám tử',650,'🦉','Cú mèo tinh mắt'],
+ ['pet_rabbit','pet','Thỏ phi công',490,'🐰','Thỏ bay dễ thương'],
+ ['pet_fox','pet','Cáo lửa',740,'🦊','Cáo bay siêu nhanh'],
+ ['pet_turtle','pet','Rùa hộ vệ',780,'🐢','Rùa bay bền bỉ'],
+ ['pet_unicorn','pet','Kỳ lân cầu vồng',1550,'🦄','Kỳ lân phép thuật'],
+ ['pet_robot','pet','Robot trợ lý',1350,'🤖','Robot bay phát sáng'],
  ['pet_none','pet','Không có pet',0,'➖','Bay một mình'],['pet_dog','pet','Chó siêu nhân',350,'🐶','Cún áo choàng đỏ'],['pet_cat','pet','Mèo phi hành',380,'🐱','Meo meo trên mây'],['pet_chicken','pet','Gà chiến bay',410,'🐔','Cục tác phản lực'],['pet_duck','pet','Vịt phi công',450,'🦆','Quạc quạc trên không'],['pet_pig','pet','Lợn tên lửa',620,'🐷','Ụt ịt vượt gió'],['pet_dragon','pet','Rồng con',1500,'🐉','Pet siêu VIP']
 ].map(a=>({id:a[0],slot:a[1],name:a[2],price:a[3],emoji:a[4],desc:a[5]}));
 const BY=Object.fromEntries(GEAR.map(x=>[x.id,x]));
-// Preserve the original database catalog/ownership, but display ONLY full characters and pets.
+// V13 extends character and pet catalog; keep other old ownership records hidden and intact.
 const GROUPS=[['character','🦸 Nhân vật 3D'],['pet','🐾 Thú cưng']];
-const CHAR_IDS=['hero_classic','outfit_vest','outfit_ninja','outfit_armor','outfit_royal','hero_sun'];
+const CHAR_IDS=['hero_classic','outfit_vest','outfit_ninja','outfit_armor','outfit_royal','hero_sun',
+'hero_natra','hero_monkey','hero_dragon_knight','hero_thunder_god','hero_block',
+'hero_gold_boss','hero_traffic','hero_mecha','hero_titan','hero_robot_pilot'];
 const LEGACY_CHAR_IDS=['hero_thunder','hero_king'];
+const PET_IDS=['pet_none','pet_dog','pet_cat','pet_chicken','pet_duck','pet_pig','pet_dragon',
+'pet_panda','pet_monkey','pet_tiger','pet_shark','pet_owl','pet_rabbit','pet_fox','pet_turtle','pet_unicorn','pet_robot'];
 function characterItems(){
  const list=CHAR_IDS.slice();
  for(const id of LEGACY_CHAR_IDS)if(getOwned(BY[id])||equipped()[BY[id].slot]===id)list.push(id);
@@ -29,7 +53,11 @@ const CHARACTER_NAMES={
  hero_classic:'Siêu nhân nguyên bản',outfit_vest:'Siêu nhân Chủ Tịch',
  outfit_ninja:'Siêu nhân Ninja',outfit_armor:'Siêu nhân Chiến Binh',
  outfit_royal:'Siêu nhân Hoàng Gia',hero_sun:'Siêu nhân VIP',
- hero_thunder:'Siêu nhân Sấm Sét',hero_king:'Siêu nhân Đại Gia'
+ hero_thunder:'Siêu nhân Sấm Sét',hero_king:'Siêu nhân Đại Gia',
+ hero_natra:'Bé Na Tra Lửa Đỏ',hero_monkey:'Hầu Vương Thiên Cung',hero_dragon_knight:'Tiểu Long Tướng',
+ hero_thunder_god:'Chiến Thần Lôi Điện',hero_block:'Khối Vuông Phi Hành',
+ hero_gold_boss:'Đại Gia Vest Vàng',hero_traffic:'Siêu Nhân Giao Thông',
+ hero_mecha:'Mecha Hộ Vệ',hero_titan:'Robot Titan Cánh Thép',hero_robot_pilot:'Phi Công Người Máy'
 };
 function shopName(item){return CHARACTER_NAMES[item.id]||item.name}
 function shopDescription(item){return CHARACTER_NAMES[item.id]?'Nhân vật 3D nguyên bộ, không ghép phụ kiện':item.desc}
@@ -94,7 +122,7 @@ function drawShop(root){
  const worn=shopName(BY[currentChar(pr)]||BY.hero_classic);const pet=pr.pet&&pr.pet!=='pet_none'?BY[pr.pet]?.name:'';
  root.append(html('p','previewtag',(selection?'✨ ĐANG THỬ: ':'✨ ĐANG DÙNG: ')+(selection?shopName(selection):worn)+(selection?'':' · '+(pet||'Không pet'))));
  root.append(html('p','nn-cp-subtitle','Nhân vật là ảnh 3D nguyên bộ • Pet bay phía sau • Mua một lần dùng mãi'));
- const cards=html('div','productgrid');const listing=shopTab==='character'?characterItems():GEAR.filter(x=>x.slot==='pet');
+ const cards=html('div','productgrid');const listing=shopTab==='character'?characterItems():PET_IDS.map(id=>BY[id]);
  for(const item of listing){
   const wornNow=cosmeticIsActive(item,eq),card=html('article','product nn-cp-card'+(wornNow?' nn-cp-worn':''));
   const tile=html('div','productemoji nn-cp-art'),thumb=html('canvas','nn-cp-tile');thumb.width=360;thumb.height=240;thumb.dataset.itemId=item.id;

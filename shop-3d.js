@@ -1,14 +1,18 @@
-/* SIÊU NHÂN NÉ NHẬU — V12: CHỈ NHÂN VẬT 3D NGUYÊN BỘ + PET.
+/* SIÊU NHÂN NÉ NHẬU — V13: 16 NHÂN VẬT 3D NGUYÊN BỘ + PET.
    Không vẽ kính/mũ/tóc/trang sức; không monkey-patch Canvas; giữ nguyên item ID/Supabase.
 */
 (()=>{'use strict';
  if(window.NNShop3D)return;
- const VERSION='12.0.0', $=q=>document.querySelector(q);
+ const VERSION='13.0.0', $=q=>document.querySelector(q);
  const characterImage=new Image(), petImage=new Image();
  characterImage.decoding='async';petImage.decoding='async';
  characterImage.src='shop-base-clean-v11.png?v='+VERSION;
  petImage.src='shop-parts-v11.png?v='+VERSION;
  const ORIGINAL=new Image();ORIGINAL.decoding='async';ORIGINAL.src='shop-3d-atlas.png?v='+VERSION;
+ const newHeroes=new Image(),newPets=new Image();
+ newHeroes.decoding='async';newPets.decoding='async';
+ newHeroes.src='shop-heroes-v13.webp?v='+VERSION;
+ newPets.src='shop-pets-v13.webp?v='+VERSION;
  // Each character is a complete 3D render, not separately assembled clothing.
  const LOOKS={
   hero_classic:{key:'classic',col:0,row:0},
@@ -18,12 +22,27 @@
   outfit_royal:{key:'royal',col:1,row:1},
   hero_sun:{key:'vip',col:2,row:1},
   hero_thunder:{key:'armor',col:0,row:1},// Respect historical purchases.
-  hero_king:{key:'royal',col:1,row:1}
+  hero_king:{key:'royal',col:1,row:1},
+  hero_natra:{key:'natra',col:0,row:0,sheet:'v13'},
+  hero_monkey:{key:'monkey',col:1,row:0,sheet:'v13'},
+  hero_dragon_knight:{key:'dragon_knight',col:2,row:0,sheet:'v13'},
+  hero_thunder_god:{key:'thunder_god',col:3,row:0,sheet:'v13'},
+  hero_block:{key:'block',col:4,row:0,sheet:'v13'},
+  hero_gold_boss:{key:'gold_boss',col:0,row:1,sheet:'v13'},
+  hero_traffic:{key:'traffic',col:1,row:1,sheet:'v13'},
+  hero_mecha:{key:'mecha',col:2,row:1,sheet:'v13'},
+  hero_titan:{key:'titan',col:3,row:1,sheet:'v13'},
+  hero_robot_pilot:{key:'robot_pilot',col:4,row:1,sheet:'v13'}
  };
  const PETS={
   pet_dog:[788,394,216,172],pet_cat:[1040,394,224,171],
   pet_chicken:[23,586,209,171],pet_duck:[286,586,195,172],
-  pet_pig:[533,586,214,172],pet_dragon:[803,586,186,172]
+  pet_pig:[533,586,214,172],pet_dragon:[803,586,186,172],
+  pet_panda:[0,0,0,0,'v13',0,0], pet_monkey:[0,0,0,0,'v13',1,0],
+  pet_tiger:[0,0,0,0,'v13',2,0], pet_shark:[0,0,0,0,'v13',3,0],
+  pet_owl:[0,0,0,0,'v13',4,0], pet_rabbit:[0,0,0,0,'v13',0,1],
+  pet_fox:[0,0,0,0,'v13',1,1], pet_turtle:[0,0,0,0,'v13',2,1],
+  pet_unicorn:[0,0,0,0,'v13',3,1], pet_robot:[0,0,0,0,'v13',4,1]
  };
  const STAGE_W=735,STAGE_H=443.5,HERO_X=144;
  const ready=()=>!!((characterImage.complete&&characterImage.naturalWidth===1774)||(ORIGINAL.complete&&ORIGINAL.naturalWidth===1774));
@@ -33,15 +52,22 @@
  }
  function currentGear(){try{return window.NNGameEquipment?.()||{character:'hero_classic',outfit:'outfit_none',pet:'pet_none'}}catch{return {character:'hero_classic',outfit:'outfit_none',pet:'pet_none'}}}
  function renderPet(c,id,t,centerX,centerY,w,h){
-  const box=PETS[id];if(!box||!petImage.complete||petImage.naturalWidth!==1280)return false;
-  const [sx,sy,sw,sh]=box;
-  c.save();c.translate(centerX,centerY+Math.sin(t*5.2+id.length)*8);c.rotate(Math.sin(t*3.4)*.035);
-  c.drawImage(petImage,sx,sy,sw,sh,-w/2,-h/2,w,h);c.restore();return true;
+  const box=PETS[id];if(!box)return false;
+  let im=petImage,sx=box[0],sy=box[1],sw=box[2],sh=box[3];
+  if(box[4]==='v13'){
+   im=newPets;if(!im.complete||!im.naturalWidth)return false;
+   sw=im.naturalWidth/5;sh=im.naturalHeight/2;sx=box[5]*sw;sy=box[6]*sh;
+  }else if(!im.complete||im.naturalWidth!==1280)return false;
+  c.save();c.translate(centerX,centerY+Math.sin(t*5.2+id.length)*8);
+  c.rotate(Math.sin(t*3.4)*.035);
+  // Pet follows BEHIND the superhero, with movement but never covers the face.
+  c.drawImage(im,sx,sy,sw,sh,-w/2,-h/2,w,h);c.restore();return true;
  }
  function drawLook(c,x,y,w,h,gear,t,options={}){
   if(!ready())return false;
   const chosen=options.itemId||currentId(gear),look=LOOKS[chosen]||LOOKS.hero_classic;
-  const im=(characterImage.complete&&characterImage.naturalWidth===1774)?characterImage:ORIGINAL;
+  const im=look.sheet==='v13'?newHeroes:((characterImage.complete&&characterImage.naturalWidth===1774)?characterImage:ORIGINAL);
+  if(!im.complete||!im.naturalWidth)return false;
   // Both hero and follower use ONE stage transform, with one shared rotation.
   const scale=Math.min(w/STAGE_W,h/STAGE_H);
   const ww=STAGE_W*scale,hh=STAGE_H*scale;
@@ -52,8 +78,10 @@
    for(let k=0;k<3;k++){c.beginPath();c.moveTo(4-k*15,182+k*22);c.lineTo(-33-k*15,182+k*22);c.stroke()}c.restore()}
   // Render pet FIRST, always behind the full character (no baked-in pet on VIP).
   if(options.withPet!==false)renderPet(c,gear?.pet,t,90,292,162,134);
-  const sw=im.naturalWidth/3,sh=im.naturalHeight/2;
-  c.drawImage(im,look.col*sw,look.row*sh,sw,sh,HERO_X,0,sw,sh);
+  const sw=im.naturalWidth/(look.sheet==='v13'?5:3),sh=im.naturalHeight/2;
+  // Both formats map into the same coordinate stage; no hats, glasses or overlays.
+  if(look.sheet==='v13') c.drawImage(im,look.col*sw,look.row*sh,sw,sh,145,9,570,416);
+  else c.drawImage(im,look.col*sw,look.row*sh,sw,sh,HERO_X,0,sw,sh);
   c.restore();return true;
  }
  function drawGameHero(c,x,y,w,h,gear,t){return drawLook(c,x,y,w,h,gear,t,{trail:true})}
