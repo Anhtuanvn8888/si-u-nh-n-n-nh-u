@@ -15,7 +15,31 @@ const GEAR=[
  ['jewel_none','jewelry','Không trang sức',0,'🙂','Đơn giản'],['jewel_chain','jewelry','Dây chuyền vàng',250,'📿','Sáng lấp lánh'],['jewel_medal','jewelry','Huy chương',490,'🥇','Huyền thoại thể thao'],['jewel_diamond','jewelry','Kim cương',1250,'💎','Rực cả bầu trời'],
  ['pet_none','pet','Không có pet',0,'➖','Bay một mình'],['pet_dog','pet','Chó siêu nhân',350,'🐶','Cún áo choàng đỏ'],['pet_cat','pet','Mèo phi hành',380,'🐱','Meo meo trên mây'],['pet_chicken','pet','Gà chiến bay',410,'🐔','Cục tác phản lực'],['pet_duck','pet','Vịt phi công',450,'🦆','Quạc quạc trên không'],['pet_pig','pet','Lợn tên lửa',620,'🐷','Ụt ịt vượt gió'],['pet_dragon','pet','Rồng con',1500,'🐉','Pet siêu VIP']
 ].map(a=>({id:a[0],slot:a[1],name:a[2],price:a[3],emoji:a[4],desc:a[5]}));
-const BY=Object.fromEntries(GEAR.map(x=>[x.id,x]));const GROUPS=[['character','🦸 Nhân vật'],['outfit','👕 Quần áo'],['hair','💇 Tóc'],['glasses','🕶️ Kính'],['hat','🎩 Mũ'],['jewelry','📿 Trang sức'],['pet','🐾 Pet']];
+const BY=Object.fromEntries(GEAR.map(x=>[x.id,x]));
+// Preserve the original database catalog/ownership, but display ONLY full characters and pets.
+const GROUPS=[['character','🦸 Nhân vật 3D'],['pet','🐾 Thú cưng']];
+const CHAR_IDS=['hero_classic','outfit_vest','outfit_ninja','outfit_armor','outfit_royal','hero_sun'];
+const LEGACY_CHAR_IDS=['hero_thunder','hero_king'];
+function characterItems(){
+ const list=CHAR_IDS.slice();
+ for(const id of LEGACY_CHAR_IDS)if(getOwned(BY[id])||equipped()[BY[id].slot]===id)list.push(id);
+ return list.map(id=>BY[id]);
+}
+const CHARACTER_NAMES={
+ hero_classic:'Siêu nhân nguyên bản',outfit_vest:'Siêu nhân Chủ Tịch',
+ outfit_ninja:'Siêu nhân Ninja',outfit_armor:'Siêu nhân Chiến Binh',
+ outfit_royal:'Siêu nhân Hoàng Gia',hero_sun:'Siêu nhân VIP',
+ hero_thunder:'Siêu nhân Sấm Sét',hero_king:'Siêu nhân Đại Gia'
+};
+function shopName(item){return CHARACTER_NAMES[item.id]||item.name}
+function shopDescription(item){return CHARACTER_NAMES[item.id]?'Nhân vật 3D nguyên bộ, không ghép phụ kiện':item.desc}
+function currentChar(eq){return eq.outfit&&eq.outfit!=='outfit_none'?eq.outfit:(eq.character||'hero_classic')}
+function cosmeticIsActive(item,eq){return item.slot==='pet'?eq.pet===item.id:currentChar(eq)===item.id}
+function previewEquipment(eq,item){const next={...eq};if(!item)return next;
+ if(item.slot==='pet')next.pet=item.id;
+ else if(item.slot==='outfit'){next.outfit=item.id;next.character='hero_classic'}
+ else {next.character=item.id;next.outfit='outfit_none'}return next}
+
 const DEFAULT=Object.fromEntries(GEAR.filter(x=>x.price===0).map(x=>[x.slot,x.id]));
 const guest=load(KEY,{nick:'Chủ Tịch',best:0,totalEarned:0,ranking:[],items:[],equip:{},avatar:null,sound:true});
 for(const [k,v] of Object.entries({nick:'Chủ Tịch',best:0,totalEarned:0,ranking:[],items:[],equip:{},avatar:null,sound:true})){if(guest[k]===undefined)guest[k]=v}
@@ -49,6 +73,7 @@ function wallet(){return isOnline()?account.gold_balance:guestGold}
 function updateGoldUi(){const g=wallet();$('wallet').textContent=money(g);$('panelGold').textContent='🪙 '+money(g);$('state').textContent=isOnline()?'ONLINE · LƯU MÂY':'KHÁCH · LƯU MÁY';$('panelUser').textContent=isOnline()?'🟢 '+account.nickname:'⚪ Khách · chưa đồng bộ'}
 function getOwned(item){return item.price===0||(isOnline()?owned.has(item.id):guest.items.includes(item.id))}
 function equipped(){const src=isOnline()?account.equipped:guest.equip;const eq={...DEFAULT,...src};for(const [slot,id] of Object.entries(eq))if(!BY[id]||BY[id].slot!==slot||!getOwned(BY[id]))eq[slot]=DEFAULT[slot];return eq}
+window.NNGameEquipment=equipped;
 function setGuestGold(n){guestGold=Math.max(0,Math.floor(n));save(GKEY,guestGold);updateGoldUi()}
 function setStage(p){phase=p;for(const id of ['menu','pauseScreen','over','panel'])$(id).classList.toggle('hidden',id!==(p==='pause'?'pauseScreen':p));$('hud').classList.toggle('hidden',p!=='play');}
 function openPanel(kind){previousPhase=phase;page=kind||'shop';previewItem=null;setStage('panel');renderPanel()}
@@ -57,16 +82,63 @@ function setAvatar(uri){guest.avatar=uri||null;persist();const preview=$('face')
 function takePhoto(input){const file=input.files?.[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>15e6){notify('Chọn ảnh dưới 15 MB nhé');return}const url=URL.createObjectURL(file),im=new Image();im.onload=()=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=160;const c=canvas.getContext('2d');const d=Math.min(im.width,im.height);c.drawImage(im,(im.width-d)/2,(im.height-d)/2,d,d,0,0,160,160);setAvatar(canvas.toDataURL('image/jpeg',.77));URL.revokeObjectURL(url);notify('Đã gắn mặt siêu nhân!')};im.onerror=()=>{URL.revokeObjectURL(url);notify('Không đọc được ảnh')};im.src=url;input.value=''}
 function name(){return ($('nickname').value.trim().slice(0,16)||'Siêu nhân')}
 function updateNickname(){guest.nick=name();persist();if(isOnline()&&name()!==account.nickname){cloud.rpc('set_player_name',{p_nickname:name()}).then(({data,error})=>{if(!error){account.nickname=data;updateGoldUi()}else notify('Chưa lưu biệt danh online: '+error.message)})}}
-function renderPanel(){const title=page==='shop'?'🛍️ THỜI TRANG SIÊU NHÂN':page==='rank'?'🏆 BẢNG VÀNG':'👤 TÀI KHOẢN';$('panelTitle').textContent=title;updateGoldUi();for(const b of document.querySelectorAll('[data-page]'))b.classList.toggle('active',b.dataset.page===page);const content=$('panelContent');content.replaceChildren();if(page==='shop')drawShop(content);else if(page==='rank')drawRanks(content);else drawAccount(content)}
-function drawShop(root){root.append(html('p','intro','Trang phục và pet chỉ để trang trí, không tăng sức mạnh. Nhặt vàng rồi mua, mua một lần dùng mãi!'));
-if(!isOnline())root.append(html('p','notice','⚠ Chơi khách: vàng, pet và đồ chỉ lưu ở máy này. Đăng nhập sẽ dùng ví online riêng, không nhập vàng khách vào tài khoản.'));
-const tabs=html('div','tabs');for(const [slot,label] of GROUPS){const b=btn(label,()=>{shopTab=slot;previewItem=null;renderPanel()},'tab');b.classList.toggle('active',slot===shopTab);tabs.append(b)}root.append(tabs);
-const equipNow=equipped(),tryEquip={...equipNow};if(previewItem&&BY[previewItem])tryEquip[BY[previewItem].slot]=previewItem;
-const pv=html('div','preview');pv.append(html('div','preview-hero',BY[tryEquip.character].emoji));const active=['outfit','hair','glasses','hat','jewelry'].filter(slot=>tryEquip[slot]!==DEFAULT[slot]);for(const [idx,slot] of active.entries()){const g=html('div','preview-gear',BY[tryEquip[slot]].emoji);g.style.left=(54+idx%2*17)+'%';g.style.top=(25+Math.floor(idx/2)*34)+'px';pv.append(g)}if(tryEquip.pet!=='pet_none')pv.append(html('div','preview-pet',BY[tryEquip.pet].emoji));root.append(pv);
-root.append(html('p','previewtag',previewItem?'✨ ĐANG THỬ: '+BY[previewItem].name:'✨ ĐANG MẶC: '+Object.values(tryEquip).filter(id=>id!==DEFAULT[BY[id].slot]).map(id=>BY[id].name).join(' · ')||'Mặc định'));
-const cards=html('div','productgrid');for(const item of GEAR.filter(x=>x.slot===shopTab)){const c=html('article','product');c.append(html('div','productemoji',item.emoji));const info=html('div');info.append(html('div','productname',item.name),html('div','productdesc',item.desc),html('div','price',item.price?money(item.price)+' 🪙':'MIỄN PHÍ'));c.append(info);const act=html('div','productactions');act.append(btn('👁 THỬ',()=>{previewItem=item.id;renderPanel()},'shopaction'));const current=equipNow[item.slot]===item.id;const buy=btn(current?'✓ ĐANG DÙNG':getOwned(item)?'MẶC':'MUA',()=>getOwned(item)?equipItem(item):buyItem(item),'shopaction goldbtn');buy.disabled=current;act.append(buy);c.append(act);cards.append(c)}root.append(cards)}
-async function buyItem(item){if(busy)return;if(wallet()<item.price){notify('Thiếu '+money(item.price-wallet())+' vàng!');return}busy=true;try{if(isOnline()){const {data,error}=await cloud.rpc('buy_cosmetic',{p_item_id:item.id});if(error)throw error;account.gold_balance=data[0].gold_balance;owned.add(item.id)}else{guest.items.push(item.id);persist();setGuestGold(guestGold-item.price)}previewItem=item.id;notify('Mua '+item.name+' thành công!');renderPanel()}catch(e){notify('Không mua được: '+e.message)}finally{busy=false}}
-async function equipItem(item){if(busy||!getOwned(item))return;busy=true;try{if(isOnline()){const {data,error}=await cloud.rpc('equip_cosmetic',{p_item_id:item.id});if(error)throw error;account.equipped=data}else{guest.equip[item.slot]=item.id;persist()}previewItem=null;notify('Đã trang bị '+item.name);renderPanel()}catch(e){notify('Lỗi trang bị: '+e.message)}finally{busy=false}}
+function renderPanel(){const title=page==='shop'?'🛍️ NHÂN VẬT & PET':page==='rank'?'🏆 BẢNG VÀNG':'👤 TÀI KHOẢN';$('panelTitle').textContent=title;updateGoldUi();for(const b of document.querySelectorAll('[data-page]'))b.classList.toggle('active',b.dataset.page===page);const content=$('panelContent');content.replaceChildren();if(page==='shop')drawShop(content);else if(page==='rank')drawRanks(content);else drawAccount(content)}
+function drawShop(root){
+ root.append(html('p','intro','Chỉ bán nhân vật 3D nguyên bộ và thú cưng bay theo. Không còn mũ, kính, tóc, trang sức hay áo quần rời.'));
+ if(!isOnline())root.append(html('p','notice','⚠ Chơi khách: vàng và vật phẩm lưu trên máy này. Đăng nhập sử dụng ví online riêng.'));
+ const tabs=html('div','tabs');for(const [slot,label] of GROUPS){const b=btn(label,()=>{shopTab=slot;previewItem=null;renderPanel()},'tab');b.classList.toggle('active',slot===shopTab);tabs.append(b)}root.append(tabs);
+ const eq=equipped(),pr=previewEquipment(eq,BY[previewItem]);
+ const pv=html('div','preview');const cv=html('canvas','nn-cp-preview');cv.width=720;cv.height=420;cv.setAttribute('aria-label','Nhân vật 3D và pet đang thử');pv.append(cv);root.append(pv);
+ root.dataset.previewItem=previewItem||'';
+ const selection=previewItem?BY[previewItem]:null;
+ const worn=shopName(BY[currentChar(pr)]||BY.hero_classic);const pet=pr.pet&&pr.pet!=='pet_none'?BY[pr.pet]?.name:'';
+ root.append(html('p','previewtag',(selection?'✨ ĐANG THỬ: ':'✨ ĐANG DÙNG: ')+(selection?shopName(selection):worn)+(selection?'':' · '+(pet||'Không pet'))));
+ root.append(html('p','nn-cp-subtitle','Nhân vật là ảnh 3D nguyên bộ • Pet bay phía sau • Mua một lần dùng mãi'));
+ const cards=html('div','productgrid');const listing=shopTab==='character'?characterItems():GEAR.filter(x=>x.slot==='pet');
+ for(const item of listing){
+  const wornNow=cosmeticIsActive(item,eq),card=html('article','product nn-cp-card'+(wornNow?' nn-cp-worn':''));
+  const tile=html('div','productemoji nn-cp-art'),thumb=html('canvas','nn-cp-tile');thumb.width=360;thumb.height=240;thumb.dataset.itemId=item.id;
+  tile.append(thumb);card.append(tile);
+  const info=html('div');info.append(html('div','productname',shopName(item)),html('div','productdesc',shopDescription(item)),html('div','price',item.price?money(item.price)+' 🪙':'MIỄN PHÍ'));
+  card.append(info);
+  const act=html('div','productactions');act.append(btn('👁 THỬ',()=>{previewItem=item.id;renderPanel()},'shopaction'));
+  const action=btn(wornNow?'✓ ĐANG DÙNG':getOwned(item)?'MẶC':'MUA',()=>getOwned(item)?equipItem(item):buyItem(item),'shopaction goldbtn');action.disabled=wornNow;
+  act.append(action);card.append(act);cards.append(card);
+ }
+ root.append(cards)
+}
+// One character slot at a time. Keep old ownership data, including hidden accessories.
+async function applyCosmetic(item){
+ const ids=item.slot==='pet'?[item.id]:item.slot==='outfit'?['hero_classic',item.id]:['outfit_none',item.id];
+ if(isOnline()){
+  for(const id of ids){const {data,error}=await cloud.rpc('equip_cosmetic',{p_item_id:id});if(error)throw error;account.equipped=data}
+ }else{
+  if(item.slot==='pet')guest.equip.pet=item.id;
+  else if(item.slot==='outfit'){guest.equip.character='hero_classic';guest.equip.outfit=item.id}
+  else {guest.equip.outfit='outfit_none';guest.equip.character=item.id}
+  persist();
+ }
+}
+async function buyItem(item){
+ if(busy)return;if(wallet()<item.price){notify('Thiếu '+money(item.price-wallet())+' vàng!');return}
+ busy=true;let purchased=false;
+ try{
+  if(isOnline()){
+   const {data,error}=await cloud.rpc('buy_cosmetic',{p_item_id:item.id});if(error)throw error;
+   account.gold_balance=data[0].gold_balance;owned.add(item.id);
+  }else{
+   if(!guest.items.includes(item.id))guest.items.push(item.id);
+   persist();setGuestGold(guestGold-item.price)
+  }
+  purchased=true;
+  await applyCosmetic(item);previewItem=null;notify('✅ Đã mua và trang bị '+item.name);renderPanel();
+ }catch(e){notify(purchased?'Đã mua nhưng chưa mặc được: '+e.message:'Không mua được: '+e.message);renderPanel()}
+ finally{busy=false}
+}
+async function equipItem(item){if(busy||!getOwned(item))return;busy=true;
+ try{await applyCosmetic(item);previewItem=null;notify('✅ Đã chọn '+item.name);renderPanel()}
+ catch(e){notify('Lỗi trang bị: '+e.message)}finally{busy=false}
+}
 async function drawRanks(root){root.append(html('p','intro','🏆 TOP điểm: điểm cao nhất trong một lượt. 💰 Đại gia: tổng vàng đã nhặt từ trước tới nay (không trừ khi mua đồ).'));
 const tabs=html('div','tabs');for(const [type,t] of [['score','🏆 TOP ĐIỂM'],['gold','💰 TOP ĐẠI GIA']]){const b=btn(t,()=>{rankTab=type;renderPanel()},'tab');b.classList.toggle('active',type===rankTab);tabs.append(b)}root.append(tabs);const box=html('div');root.append(box);
 if(!cloudConfigured||!cloud){box.append(html('p','notice','Chưa kết nối máy chủ nên TOP toàn game chưa bật. Các mục dưới là kết quả lưu trên thiết bị.'));if(rankTab==='score'){for(const [i,row] of guest.ranking.slice(0,10).entries())rankLine(box,i,row.nick,row.score,' điểm')}else rankLine(box,0,guest.nick,guest.totalEarned,' 🪙');return}
@@ -117,23 +189,19 @@ function drawObstacle(ob){if(ob.type==='split'){
  }}
 function powerIcon(x,y,type){ctx.save();ctx.shadowColor='#ffde74';ctx.shadowBlur=14;circle(x,y,23,'#19345e');circle(x,y,21,'#f5ba32');emoji(x,y,powers[type][0],29);ctx.restore()}
 function coinIcon(x,y){ctx.save();ctx.shadowColor='#ffca3b';ctx.shadowBlur=14;circle(x,y,13+Math.sin(time*8)*1.2,'#ffd052');label(x,y,'★',15,'#fff5b5','#a86f2b');ctx.restore()}
-function drawHero(y){const x=player.x,eq=equipped();ctx.save();ctx.translate(x,y);ctx.rotate(player.rot*.53);
- if(eq.character!=='hero_classic'){ctx.strokeStyle=eq.character==='hero_thunder'?'#bbaaff':eq.character==='hero_sun'?'#9ffbff':'#ffdd74';ctx.lineWidth=3.5;ctx.shadowBlur=14;ctx.shadowColor=ctx.strokeStyle;ctx.beginPath();ctx.ellipse(-7,1,74+Math.sin(time*6)*4,50,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0}
- if(immortal>elapsed){ctx.shadowColor='#ffe873';ctx.shadowBlur=22}
- if(!paint('hero',-90,-62+Math.sin(time*16)*2,160,113))emoji(0,0,'🦸',87);
- ctx.shadowBlur=0;
- if(avatarImg?.naturalWidth){ctx.save();ctx.beginPath();ctx.ellipse(10,-13,23,25,-.1,0,Math.PI*2);ctx.clip();ctx.drawImage(avatarImg,-13,-38,46,50);ctx.restore()}
- // Layered outfits are visible during actual flight, and cosmetic only.
- if(eq.outfit!=='outfit_none')emoji(-13,9,BY[eq.outfit].emoji,34);
- if(eq.hair!=='hair_none'&&eq.hat==='hat_none')emoji(13,-45,BY[eq.hair].emoji,21);
- if(eq.glasses!=='glasses_none')emoji(11,-11,BY[eq.glasses].emoji,24);
- if(eq.hat!=='hat_none')emoji(11,-49,BY[eq.hat].emoji,30);
- if(eq.jewelry!=='jewel_none')emoji(8,17,BY[eq.jewelry].emoji,17);
- if(shield){ctx.strokeStyle='#76ffcf';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,43+Math.sin(time*7)*2,0,Math.PI*2);ctx.stroke()}
- if(immortal>elapsed){ctx.strokeStyle='#ffe25a';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(0,0,61,39,0,0,Math.PI*2);ctx.stroke()}
- ctx.restore();drawPet(x,y,eq.pet)}
-function drawPet(x,y,id){if(id==='pet_none')return;const e=BY[id].emoji,px=x-77+Math.sin(time*3.7)*9,py=y+36+Math.sin(time*7)*9;ctx.save();ctx.translate(px,py);ctx.rotate(Math.sin(time*5)*.08);
-ctx.beginPath();ctx.moveTo(-8,-9);ctx.quadraticCurveTo(-29,-20,-40,-4);ctx.lineTo(-22,16);ctx.lineTo(-7,7);ctx.closePath();ctx.fillStyle='#e83a55';ctx.fill();ctx.strokeStyle='#ffcb83';ctx.lineWidth=2;ctx.stroke();emoji(0,0,e,38);emoji(-26,18,'✨',15);ctx.restore()}
+function drawHero(y){
+ const x=player.x,eq=equipped();ctx.save();ctx.translate(x,y);ctx.rotate(player.rot*.53);
+ const rendered=window.NNShop3D?.drawGameHero?.(ctx,-96,-63,184,114,eq,time)||false;
+ if(!rendered){
+  if(!paint('hero',-90,-62+Math.sin(time*16)*2,160,113))emoji(0,0,'🦸',87);
+ }
+ // Power states remain visible on HUD; no circles drawn around the character.
+ ctx.restore();if(!rendered)drawPet(x,y,eq.pet);
+}
+function drawPet(x,y,id){if(id==='pet_none')return;
+ const e=BY[id]?.emoji||'🐾',px=x-78+Math.sin(time*3.7)*8,py=y+32+Math.sin(time*7)*9;
+ ctx.save();ctx.translate(px,py);ctx.rotate(Math.sin(time*5)*.08);emoji(0,0,e,34);ctx.restore();
+}
 function draw(){ctx.save();if(shake>0)ctx.translate(random(-shake,shake),random(-shake,shake));background();for(const ob of obstacles)drawObstacle(ob);
  if(phase==='play'||phase==='pause')drawHero(player.y);else if(phase==='menu')drawHero(H*.50+Math.sin(time*2)*9);else if(phase==='over')drawHero(H*.52);
  if(phase==='play'&&elapsed<3)label(W/2,168,'CHẠM ĐỂ BAY ↑',18,'#ffeb9b');
@@ -161,7 +229,14 @@ for(let i=obstacles.length-1;i>=0;i--){const ob=obstacles[i];ob.x-=speed*dt;if(o
 if(!ob.done&&ob.x+ob.w<player.x-player.r){ob.done=true;passed++;score+=double>elapsed?2:1;if(passed%10===0)score+=5;sfx(520,.06);updateHud()}
 if(ob.coin&&!ob.coin.got){const c=ob.coin;if(Math.hypot(player.x-c.x,player.y-c.y)<31||(magnet>elapsed&&Math.abs(player.x-c.x)<122)){c.got=true;coins+=c.value;updateHud();sfx(950,.08)}}
 if(ob.type==='split'&&!ob.got){const pos=ob.lane==='top'?(105+ob.mid)/2:(ob.mid+ob.h+H-92)/2;if(Math.hypot(player.x-(ob.x+ob.w/2),player.y-pos)<41){ob.got=true;collect(ob.power)}}
-if(!safe&&collision(ob)){if(shield){shield=0;immortal=elapsed+1.3;flashing=.4;sfx(270,.15)}else{gameOver();return}}}
+// A picked-up invincibility item is effective in this same frame.
+const touching=collision(ob),protectedNow=immortal>elapsed;
+if(touching&&protectedNow)ob.immortalPass=true;
+if(!touching)ob.immortalPass=false;
+if(touching&&!protectedNow&&!ob.immortalPass){
+ if(shield){shield=0;immortal=elapsed+1.3;ob.immortalPass=true;flashing=.4;sfx(270,.15)}
+ else{gameOver();return}
+}}
 shake=Math.max(0,shake-dt*30);flashing=Math.max(0,flashing-dt*2.5)}
 function frame(stamp){const dt=Math.min(.034,Math.max(.002,(stamp-last)/1000||.016));last=stamp;advance(dt);draw();requestAnimationFrame(frame)}
 async function share(){const msg=`🦸 SIÊU NHÂN NÉ NHẬU! Tao vừa né ${passed} quán, được ${score} điểm, nhặt ${coins} vàng! Mày có vượt được không?\n${location.href}`;if(navigator.share){try{await navigator.share({title:'Siêu Nhân Né Nhậu',text:msg})}catch{}}else if(navigator.clipboard){try{await navigator.clipboard.writeText(msg);notify('Đã sao chép lời thách đấu!')}catch{notify('Chụp màn hình để khoe bạn bè!')}}}
