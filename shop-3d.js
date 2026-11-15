@@ -5,8 +5,8 @@
 */
 (()=>{'use strict';
  if(window.NNShop3D)return;
- const VERSION='5.0.0';
- const SHEET='shop-3d-atlas.png?v=5.0.0';
+ const VERSION='8.0.0';
+ const SHEET='shop-3d-atlas.png?v=8.0.0';
  const $=s=>document.querySelector(s);
  const ALL=Object.freeze([
   {key:'classic',label:'Mặc định',item:'Đồ mặc định',id:'outfit_none',slot:'outfit',price:0,col:0,row:0},
@@ -20,6 +20,8 @@
  const IDLOOKUP=new Map(ALL.map(s=>[s.id,s]));
  const FRAME={character:'hero_classic',outfit:'outfit_none',pet:'pet_none'};
  const image=new Image();image.decoding='async';image.src=SHEET;
+ const approved=new Image();approved.decoding='async';approved.src='shop-approved-combos-v8.webp?v=8.0.0';
+ const approvedLooks={'hat_cowboy|glasses_black':[0,0],'hat_crown|glasses_star':[1,0],'hat_helmet|glasses_black':[0,1],'hat_cap|glasses_heart':[1,1]};
  let online=false,playerId='',onlineLook={...FRAME},previewLook=null,lastSkin=null,onlineOwned=new Set();
  let previewCanvas=null,tiles=[],gallery=[],pending=null,animating=false;
  let modeKey='nn3d-last-guest',requestedAuth=0,lastPreviewPaint=0,lastTilePaint=0,lastMenuPaint=0;
@@ -83,7 +85,25 @@
    }
    c.globalAlpha=1;
   }
-  oldDraw.call(c,image,look.col*sw,look.row*sh,sw,sh,-w/2,-h/2,w,h);
+  // V7: pet and costume attachments inherit EXACTLY the same rotation, float
+  // and source-to-screen scale as the hero, avoiding drifting hats and glasses.
+  const gear=window.NNExtras3D;
+  const eq=opts.equipment||gear?.current?.()||{};
+  // Exact approved 3D renders for 4 frequently paired hat/glasses looks.
+  // A single baked image eliminates coordinate drift, double-eyes and floating headwear.
+  // Only use these for the classic suit; other outfits retain their real artwork.
+  const pair=look.key==='classic'&&eq.hair!=='hair_red'&&eq.hair!=='hair_blue'&&eq.hair!=='hair_rock'
+    ?approvedLooks[(eq.hat||'hat_none')+'|'+(eq.glasses||'glasses_none')]:null;
+  const canBake=!!pair&&approved.complete&&approved.naturalWidth>=1448;
+  if(gear?.drawBehind)gear.drawBehind(c,w,h,t,eq);
+  if(canBake){
+   oldDraw.call(c,approved,pair[0]*724,pair[1]*543,724,543,-w/2,-h/2,w,h);
+   // Hat and eyewear are already inside the approved image. Add any necklace separately.
+   if(gear?.drawAbove)gear.drawAbove(c,w,h,t,{...eq,hat:'hat_none',glasses:'glasses_none',hair:'hair_none'});
+  }else{
+   oldDraw.call(c,image,look.col*sw,look.row*sh,sw,sh,-w/2,-h/2,w,h);
+   if(gear?.drawAbove)gear.drawAbove(c,w,h,t,eq);
+  }
   c.restore();return true;
  }
  // Replace only the legacy hero sprite inside the original gameplay canvas.
@@ -224,17 +244,20 @@
    }
   }
  }
- function drawCanvas(cv,spec,t,trail=false){
+ function drawCanvas(cv,spec,t,trail=false,itemName='',isPreview=false){
   if(!cv?.isConnected)return;const c=cv.getContext('2d');if(!c)return;
   const w=cv.width,h=cv.height;c.clearRect(0,0,w,h);
   const boxW=w*.99,boxH=h*.93;
-  renderSprite(c,(w-boxW)/2,(h-boxH)/2,boxW,boxH,spec,t,{trail});
+  const gear=window.NNExtras3D;
+  let eq=isPreview?gear?.previewEquip?.():null;
+  if(!eq&&itemName){const item=gear?.partForName?.(itemName);if(item)eq={...gear.current(),[item.slot]:item.id}}
+  renderSprite(c,(w-boxW)/2,(h-boxH)/2,boxW,boxH,spec,t,{trail,equipment:eq||undefined});
  }
  function paintLoop(){
   const t=performance.now()/1000;
-  if(previewCanvas?.isConnected&&t-lastPreviewPaint>.033){lastPreviewPaint=t;drawCanvas(previewCanvas,previewLook||activeSprite(),t,true)}
+  if(previewCanvas?.isConnected&&t-lastPreviewPaint>.033){lastPreviewPaint=t;drawCanvas(previewCanvas,previewLook||activeSprite(),t,true,'',true)}
   if(t-lastTilePaint>.095){lastTilePaint=t;
-   for(const {cv,item,name} of tiles)drawCanvas(cv,item||activeSprite(),t);
+   for(const {cv,item,name} of tiles)drawCanvas(cv,item||activeSprite(),t,false,name);
    for(const {cv,spec} of gallery)drawCanvas(cv,spec,t);
   }
   if(t-lastMenuPaint>.033){
