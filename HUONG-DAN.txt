@@ -1,0 +1,9 @@
+SHOP HÌNH ĐẸP — GIỮ SIÊU NHÂN GỐC
+
+1. Trên GitHub repository si-u-nh-n-n-nh-u: xóa CẢ HAI dòng có shop-upgrade.js trong index.html.
+2. Trong index.html, ngay SAU dòng <script src="game-v3.js" defer></script>, thêm dòng: <script src="shop-gallery.js?v=20261115c" defer></script>
+3. GitHub > Add file > Upload files: tải shop-gallery.js và shop-atlas.png lên cùng thư mục với index.html.
+4. Commit changes, mở GitHub Pages và tải lại trang (Ctrl+Shift+R).
+5. Nếu muốn làm ít thao tác, tải 3 file index.html, shop-gallery.js, shop-atlas.png từ gói ZIP lên thư mục gốc của repo.
+
+Bản này KHÔNG thay ảnh assets/hero.png, KHÔNG can thiệp Canvas game, KHÔNG thay SQL, vàng, shop logic, Supabase. Đồ bán trong shop vẫn dùng ID và giá có sẵn.
